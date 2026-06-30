@@ -1,9 +1,10 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, Trophy } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+
 import {
     Sidebar,
     SidebarContent,
@@ -23,14 +24,23 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Browse Tournaments',
+        title: 'Tournaments',
         href: '/tournaments',
-        icon: LayoutGrid,
+        icon: Trophy,
+        items: [
+            { title: 'Browse Tournaments', href: '/tournaments' },
+            { title: 'Create Tournament', href: '/tournaments/create' },
+        ],
     },
     {
-        title: 'New Tournament',
-        href: '/tournaments/create',
-        icon: LayoutGrid,
+        title: 'Teams',
+        href: '/teams',
+        icon: Users,
+        items: [
+            { title: 'Browse Teams', href: '/teams' },
+            { title: 'My Teams', href: '/my-teams' },
+            { title: 'Create Team', href: '/teams/create' },
+        ],
     },
 ];
 

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tournament;
+use App\Models\Registration;
+use App\Models\Team;
 use Illuminate\Http\Request;
 
 class TournamentController extends Controller
@@ -15,7 +17,6 @@ class TournamentController extends Controller
             ->get();
     }
 
-
     // Public: view details
     public function show($id)
     {
@@ -25,7 +26,6 @@ class TournamentController extends Controller
         ])
         ->findOrFail($id);
     }
-
 
     // Auth required: create tournament
     public function store(Request $request)
@@ -65,8 +65,6 @@ class TournamentController extends Controller
 
         return redirect('/tournaments');
     }
-
-
 
     // Auth required: update own tournament
     public function update(Request $request, $id)
@@ -117,9 +115,6 @@ class TournamentController extends Controller
         return response()->json($tournament);
     }
 
-
-
-
     // Auth required: delete own tournament
     public function destroy($id)
     {
@@ -140,5 +135,42 @@ class TournamentController extends Controller
 
 
         return response()->json(null, 204);
+    }
+
+    public function showPage(Request $request, Tournament $tournament): \Inertia\Response
+    {
+        $tournament->load(['organizer', 'sportType', 'matches']);
+        $user = $request->user();
+
+        $eligibleTeams = collect();
+        $myRegistration = null;
+
+        if ($tournament->sportType->is_team_based) {
+            $eligibleTeams = Team::where('captain_id', $user->id)
+                ->where('sport_type_id', $tournament->sport_type_id)
+                ->get(['id', 'name', 'logo']);
+
+            $myRegistration = Registration::where('tournament_id', $tournament->id)
+                ->whereIn('team_id', $eligibleTeams->pluck('id'))
+                ->first();
+
+            // Exclude already-registered teams from the eligible list
+            if ($myRegistration) {
+                $eligibleTeams = $eligibleTeams->reject(
+                    fn ($team) => $team->id === $myRegistration->team_id
+                );
+            }
+        } else {
+            $myRegistration = Registration::where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->first();
+        }
+
+        return inertia('tournaments/showTournament', [
+            'tournament' => $tournament,
+            'eligibleTeams' => $eligibleTeams->values(),
+            'myRegistration' => $myRegistration,
+            'isOrganizer' => $tournament->organizer_id === $user->id,
+        ]);
     }
 }

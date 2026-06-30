@@ -1,24 +1,38 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import { dashboard } from '@/routes';
 
+type SportType = {
+    id: number;
+    name: string;
+};
+
+type Tournament = {
+    id: number;
+    name: string;
+    status: string;
+    start_date: string;
+    end_date: string;
+    sport_type_id: number;
+    sport_type?: SportType;
+};
+
 export default function TournamentIndex() {
-    const [tournaments, setTournaments] = useState<any[]>([]);
-    const [selectedTournament, setSelectedTournament] = useState<any>(null);
-    const [showModal, setShowModal] = useState(false);
+    const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [sportFilter, setSportFilter] = useState('');
-    const formatDate = (date:string) => {
-    return new Date(date).toLocaleDateString(
-        'en-MY',
-        {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        }
-    );
-};
+
+    const formatDate = (date: string) => {
+        return new Date(date).toLocaleDateString(
+            'en-MY',
+            {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            }
+        );
+    };
 
     useEffect(() => {
         fetch('/api/tournaments')
@@ -36,14 +50,13 @@ export default function TournamentIndex() {
     const sportTypes = useMemo(() => {
         return tournaments
             .map(t => t.sport_type)
-            .filter(Boolean)
+            .filter((s): s is SportType => Boolean(s))
             .filter(
-                (sport,index,self) =>
+                (sport, index, self) =>
                     index === self.findIndex(
                         s => s.id === sport.id
                     )
             );
-
     }, [tournaments]);
 
     const statuses = useMemo(() => {
@@ -67,25 +80,6 @@ export default function TournamentIndex() {
         });
     }, [tournaments, search, statusFilter, sportFilter]);
 
-    const openDetails = async (id:number) => {
-        try {
-
-            const response = await fetch(
-                `/api/tournaments/${id}`
-            );
-
-            const data = await response.json();
-
-            setSelectedTournament(data);
-            setShowModal(true);
-
-        } catch(error) {
-
-            console.error(error);
-
-        }
-
-    };
     return (
         <>
             <Head title="Browse Tournaments" />
@@ -170,105 +164,14 @@ export default function TournamentIndex() {
                                     {formatDate(tournament.end_date)}
                                 </p>
 
-                                <button
-                                    onClick={() => openDetails(tournament.id)}
-                                    className="mt-3 text-blue-600 hover:underline"
+                                <Link
+                                    href={`/tournaments/${tournament.id}`}
+                                    className="mt-3 inline-block text-blue-600 hover:underline"
                                 >
                                     View Details
-                                </button>
+                                </Link>
                             </div>
                         ))}
-                    </div>
-                )}
-                {showModal && selectedTournament && (
-                    <div
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
-                        onClick={() => setShowModal(false)}
-                    >
-                        <div
-                            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Header with accent gradient */}
-                            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 relative">
-                                <button
-                                    onClick={() => setShowModal(false)}
-                                    className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors"
-                                    aria-label="Close"
-                                >
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-
-                                <h2 className="text-2xl font-bold text-white pr-8">
-                                    {selectedTournament.name}
-                                </h2>
-
-                                <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-sm">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                                    {selectedTournament.status}
-                                </span>
-                            </div>
-
-                            {/* Body */}
-                            <div className="px-6 py-5 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
-                                            Sport
-                                        </p>
-                                        <p className="text-sm font-semibold text-gray-900">
-                                            {selectedTournament.sport_type?.name ?? '—'}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
-                                            Organizer
-                                        </p>
-                                        <p className="text-sm font-semibold text-gray-900">
-                                            {selectedTournament.organizer?.name ?? '—'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
-                                        Schedule
-                                    </p>
-                                    <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                                        {formatDate(selectedTournament.start_date)}
-                                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                        </svg>
-                                        {formatDate(selectedTournament.end_date)}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
-                                        Description
-                                    </p>
-                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                        {selectedTournament.description ?? 'No description provided.'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Footer */}
-                            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
-                                <button
-                                    onClick={() => setShowModal(false)}
-                                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button className="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition-colors">
-                                    Register
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 )}
             </div>

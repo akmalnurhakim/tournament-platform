@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('max_players')
                 ->nullable();
 
-            $table->integer('players_on_field')
+            $table->integer('active_players')
                 ->nullable();
             $table->timestamps();
         });

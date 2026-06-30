@@ -41,7 +41,22 @@ Route::middleware('auth')->group(function () {
     Route::apiResource('matches', MatchController::class);
 
     //teams
-    Route::apiResource('teams', TeamController::class);
+    // 'store' is excluded here and wired manually below to storeJson,
+    // since TeamController::store() now returns an Inertia redirect for
+    // the web form in routes/web.php — apiResource always calls store()
+    // by convention, so a JSON-returning method needs its own name and
+    // its own explicit route.
+    Route::apiResource('teams', TeamController::class)
+    ->except(['store'])
+    ->names([
+        'index' => 'api.teams.index',
+        'show' => 'api.teams.show',
+        'update' => 'api.teams.update',
+        'destroy' => 'api.teams.destroy',
+    ]);
+    Route::post('/teams', [TeamController::class, 'storeJson']);
+
+    Route::post('/teams/{team}/join', [TeamController::class, 'join']);
 
     //players
     Route::apiResource('players', PlayerController::class);

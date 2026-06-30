@@ -16,7 +16,7 @@ class SportTypeSeeder extends Seeder
                 'is_team_based' => true,
                 'min_players' => 11,
                 'max_players' => 23,
-                'players_on_field' => 11,
+                'active_players' => 11,
             ],
 
 
@@ -25,7 +25,7 @@ class SportTypeSeeder extends Seeder
                 'is_team_based' => true,
                 'min_players' => 2,
                 'max_players' => 2,
-                'players_on_field' => 2,
+                'active_players' => 2,
             ],
 
 
@@ -34,7 +34,7 @@ class SportTypeSeeder extends Seeder
                 'is_team_based' => true,
                 'min_players' => 5,
                 'max_players' => 12,
-                'players_on_field' => 5,
+                'active_players' => 5,
             ],
 
 
@@ -43,7 +43,7 @@ class SportTypeSeeder extends Seeder
                 'is_team_based' => false,
                 'min_players' => 1,
                 'max_players' => 1,
-                'players_on_field' => 1,
+                'active_players' => 1,
             ],
 
 
