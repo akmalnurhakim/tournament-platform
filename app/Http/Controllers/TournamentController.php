@@ -66,53 +66,29 @@ class TournamentController extends Controller
         return redirect('/tournaments');
     }
 
-    // Auth required: update own tournament
-    public function update(Request $request, $id)
+    public function update(Request $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
     {
-        $tournament =
-            Tournament::findOrFail($id);
-
-
-        // prevent editing others tournament
-        if ($tournament->organizer_id !== auth()->id()) {
-
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-
+        if ($tournament->organizer_id !== $request->user()->id) {
+            abort(403);
+        }
+        if (in_array($tournament->status, ['in_progress', 'completed'])) {
+            abort(403, 'Cannot edit a tournament that is already in progress or completed.');
         }
 
-
         $validated = $request->validate([
-
-            'sport_type_id' =>
-                'exists:sport_types,id',
-
-            'name' =>
-                'string|max:255',
-
-            'description' =>
-                'nullable|string',
-
-            'is_team_based' =>
-                'boolean',
-
-            'start_date' =>
-                'date',
-
-            'end_date' =>
-                'date',
-
-            'status' =>
-                'in:upcoming,ongoing,completed',
+            'name'          => ['required', 'string', 'max:150'],
+            'description'   => ['nullable', 'string'],
+            'sport_type_id' => ['required', 'integer', 'exists:sport_types,id'],
+            'is_team_based' => ['required', 'boolean'],
+            'start_date'    => ['required', 'date'],
+            'end_date'      => ['required', 'date', 'after_or_equal:start_date'],
         ]);
-
-
 
         $tournament->update($validated);
 
-
-        return response()->json($tournament);
+        return redirect()
+            ->route('tournaments.show', $tournament)
+            ->with('success', "Tournament \"{$tournament->name}\" updated.");
     }
 
     // Auth required: delete own tournament
@@ -171,6 +147,55 @@ class TournamentController extends Controller
             'eligibleTeams' => $eligibleTeams->values(),
             'myRegistration' => $myRegistration,
             'isOrganizer' => $tournament->organizer_id === $user->id,
+            'nextStatuses' => $tournament->organizer_id === $user->id
+                ? $tournament->nextStatuses()
+                : [],
+            'statusLabels' => Tournament::STATUS_LABELS,
+        ]);
+    }
+
+    // TournamentController.php
+    public function transition(Request $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
+    {
+        if ($tournament->organizer_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'status' => ['required', 'string'],
+        ]);
+
+        $tournament->transitionTo($request->input('status'));
+
+        return redirect()
+            ->back()
+            ->with('success', "Tournament status updated to \"{$tournament->fresh()->status}\".");
+    }
+
+    public function myTournaments(Request $request): \Inertia\Response
+    {
+        $tournaments = Tournament::with('sportType')
+            ->where('organizer_id', $request->user()->id)
+            ->latest()
+            ->get();
+
+        return inertia('tournaments/myTournaments', [
+            'tournaments' => $tournaments,
+            'statusLabels' => Tournament::STATUS_LABELS,
+        ]);
+    }
+
+    public function editPage(Request $request, Tournament $tournament): \Inertia\Response
+    {
+        if ($tournament->organizer_id !== $request->user()->id) {
+            abort(403);
+        }
+        if (in_array($tournament->status, ['in_progress', 'completed'])) {
+            abort(403, 'Cannot edit a tournament that is already in progress or completed.');
+        }
+
+        return inertia('tournaments/editTournament', [
+            'tournament' => $tournament,
         ]);
     }
 }

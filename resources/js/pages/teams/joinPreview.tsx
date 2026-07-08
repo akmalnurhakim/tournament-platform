@@ -43,7 +43,7 @@ export default function JoinPreview() {
         <>
             <Head title={`Join ${team.name}`} />
 
-            <div className="max-w-md mx-auto p-6">
+            <div className="w-full mx-auto p-8">
                 <div className="rounded-xl border bg-background p-8 shadow-sm text-center">
 
                     {team.logo ? (

@@ -39,6 +39,8 @@ type PageProps = {
     eligibleTeams: EligibleTeam[];
     myRegistration: Registration | null;
     isOrganizer: boolean;
+    nextStatuses: string[];
+    statusLabels: Record<string, string>;
 };
 
 
@@ -62,7 +64,7 @@ export default function ShowTournament() {
         <>
             <Head title={tournament.name} />
 
-            <div className="max-w-5xl mx-auto p-6 space-y-6">
+            <div className="w-auto mx-5 p-6 space-y-6">
 
                 <div className="border rounded-xl p-6 shadow space-y-5">
                     {/* Header */}
@@ -81,6 +83,14 @@ export default function ShowTournament() {
                                 className="text-sm text-blue-600 hover:underline"
                             >
                                 Manage Registrations
+                            </Link>
+                        )}
+                        {isOrganizer && (
+                            <Link
+                                href={`/tournaments/${tournament.id}/edit`}
+                                className="text-sm text-primary hover:underline"
+                            >
+                                Edit Tournament
                             </Link>
                         )}
                     </div>

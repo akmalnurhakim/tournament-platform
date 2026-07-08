@@ -13,6 +13,11 @@ class RegistrationController extends Controller
     public function store(Request $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
     {
         $tournament->load('sportType');
+        if (!$tournament->isOpen()) {
+        throw ValidationException::withMessages([
+            'tournament' => 'This tournament is not currently open for registration.',
+        ]);
+    }
         $user = $request->user();
 
         if ($tournament->sportType->is_team_based) {

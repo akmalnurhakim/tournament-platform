@@ -30,6 +30,7 @@ const mainNavItems: NavItem[] = [
         items: [
             { title: 'Browse Tournaments', href: '/tournaments' },
             { title: 'Create Tournament', href: '/tournaments/create' },
+            { title: 'My Tournaments', href: '/my-tournaments' },
         ],
     },
     {

@@ -17,6 +17,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tournaments', [TournamentController::class, 'store']);
     Route::get('/tournaments/{tournament}', [TournamentController::class, 'showPage'])->name('tournaments.show');
     Route::inertia('tournaments', 'tournaments/browseTournament')->name('tournaments');
+    Route::patch('/tournaments/{tournament}/transition', [TournamentController::class, 'transition'])->name('tournaments.transition');
+    Route::get('/my-tournaments', [TournamentController::class, 'myTournaments'])->name('tournaments.mine');
+    Route::get('/tournaments/{tournament}/edit', [TournamentController::class, 'editPage'])->name('tournaments.edit');
+    Route::patch('/tournaments/{tournament}', [TournamentController::class, 'update'])->name('tournaments.update');
 
     // Team routes
     Route::get('/teams/join/{code}', [TeamController::class, 'joinPreview'])->name('teams.join.preview');
@@ -32,11 +36,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/teams/{team}', [TeamController::class, 'update'])->name('teams.update');
 
     // Registration routes
-    // routes/web.php, inside auth/verified group
     Route::post('/tournaments/{tournament}/registrations', [RegistrationController::class, 'store'])->name('registrations.store');
     Route::patch('/registrations/{registration}/accept', [RegistrationController::class, 'accept'])->name('registrations.accept');
     Route::patch('/registrations/{registration}/reject', [RegistrationController::class, 'reject'])->name('registrations.reject');
     Route::get('/tournaments/{tournament}/registrations', [RegistrationController::class, 'manage'])->name('registrations.manage');
+
 });
 
 require __DIR__.'/settings.php';
