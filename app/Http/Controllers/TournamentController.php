@@ -2,200 +2,219 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Tournament;
-use App\Models\Registration;
-use App\Models\Team;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreTournamentRequest;
+use App\Http\Requests\UpdateTournamentRequest;
+use App\Models\SportType;
+use App\Models\Tournament;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class TournamentController extends Controller
 {
-    // Public: browse tournaments
     public function index()
     {
-        return Tournament::with('sportType')
+        $tournaments = Tournament::where('visibility', 'public')
+            ->with('sportType', 'organizer')
             ->latest()
-            ->get();
-    }
+            ->paginate(6)
+            ->withQueryString();
 
-    // Public: view details
-    public function show($id)
-    {
-        return Tournament::with([
-            'sportType',
-            'matches.participants'
-        ])
-        ->findOrFail($id);
-    }
-
-    // Auth required: create tournament
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-
-            'sport_type_id' =>
-                'required|exists:sport_types,id',
-
-            'name' =>
-                'required|string|max:255',
-
-            'description' =>
-                'nullable|string',
-
-            'is_team_based' =>
-                'boolean',
-
-            'start_date' =>
-                'required|date',
-
-            'end_date' =>
-                'required|date|after_or_equal:start_date',
-
-            'status' =>
-                'required|in:upcoming,ongoing,completed',
-
+        return Inertia::render('tournaments/index', [
+            'tournaments' => $tournaments,
+            'sportTypes' => SportType::all(),
         ]);
-
-
-        $validated['organizer_id'] =
-            auth()->id();
-
-
-        Tournament::create($validated);
-
-
-        return redirect('/tournaments');
     }
 
-    public function update(Request $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
+    public function create()
     {
-        if ($tournament->organizer_id !== $request->user()->id) {
-            abort(403);
-        }
-        if (in_array($tournament->status, ['in_progress', 'completed'])) {
-            abort(403, 'Cannot edit a tournament that is already in progress or completed.');
+        return Inertia::render('tournaments/create', [
+            'sportTypes' => SportType::all(),
+        ]);
+    }
+
+    public function store(StoreTournamentRequest $request)
+    {
+        $data = $request->validated();
+
+        if ($request->hasFile('banner')) {
+            $data['banner'] = $request->file('banner')->store('banners', 'public');
         }
 
-        $validated = $request->validate([
-            'name'          => ['required', 'string', 'max:150'],
-            'description'   => ['nullable', 'string'],
-            'sport_type_id' => ['required', 'integer', 'exists:sport_types,id'],
-            'is_team_based' => ['required', 'boolean'],
-            'start_date'    => ['required', 'date'],
-            'end_date'      => ['required', 'date', 'after_or_equal:start_date'],
+        $tournament = Tournament::create([
+            ...$data,
+            'organizer_id' => $request->user()->id,
+            'invite_code' => Str::upper(Str::random(8)),
+            'status' => 'draft',
         ]);
-
-        $tournament->update($validated);
 
         return redirect()
             ->route('tournaments.show', $tournament)
-            ->with('success', "Tournament \"{$tournament->name}\" updated.");
+            ->with('success', 'Tournament created. Configure your stages next.');
     }
 
-    // Auth required: delete own tournament
-    public function destroy($id)
+    public function show(Tournament $tournament)
     {
-        $tournament =
-            Tournament::findOrFail($id);
+        $this->authorize('view', $tournament);
 
+        $tournament->load([
+            'sportType',
+            'organizer',
+            'registrations' => fn ($q) => $q->where('status', 'approved'),
+            'registrations.participant.team',
+            'registrations.participant.user',
+            'stages.groupEntries.participant.team',
+            'stages.groupEntries.participant.user',
+            'stages.matches.participantA.team',
+            'stages.matches.participantA.user',
+            'stages.matches.participantB.team',
+            'stages.matches.participantB.user',
+        ]);
 
-        if ($tournament->organizer_id !== auth()->id()) {
+        $user = auth()->user();
+        $isOrganizer = $user && $user->id === $tournament->organizer_id;
 
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
+        $eligibleTeams = [];
+        $myRegistration = null;
 
+        if ($user) {
+            $eligibleTeams = $user->teamMemberships()
+                ->whereIn('role', ['captain', 'coach'])
+                ->with('team')
+                ->get()
+                ->pluck('team')
+                ->filter(fn ($team) => $team->sport_type_id === $tournament->sport_type_id)
+                ->values();
+
+            $myRegistration = \App\Models\Registration::where('tournament_id', $tournament->id)
+                ->whereHas('participant', function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                        ->orWhereHas('team.members', fn ($m) => $m->where('user_id', $user->id));
+                })
+                ->first(['id', 'status']);
         }
 
+        return Inertia::render('tournaments/show', [
+            'tournament' => $tournament,
+            'isOrganizer' => $isOrganizer,
+            'eligibleTeams' => $eligibleTeams,
+            'myRegistration' => $myRegistration,
+            'canRegister' => $user && !$isOrganizer && $user->can('register', $tournament),
+        ]);
+    }
+
+    public function edit(Tournament $tournament)
+    {
+        $this->authorize('update', $tournament);
+
+        return Inertia::render('tournaments/edit', [
+            'tournament' => $tournament,
+            'sportTypes' => SportType::all(),
+        ]);
+    }
+
+    public function update(UpdateTournamentRequest $request, Tournament $tournament)
+    {
+        $data = $request->validated();
+
+        if ($request->hasFile('banner')) {
+            // delete the old banner file so uploads don't pile up unused in storage
+            if ($tournament->banner) {
+                Storage::disk('public')->delete($tournament->banner);
+            }
+
+            $data['banner'] = $request->file('banner')->store('banners', 'public');
+        }
+
+        $tournament->update($data);
+
+        return redirect()
+            ->route('tournaments.show', $tournament)
+            ->with('success', 'Tournament updated.');
+    }
+
+    public function destroy(Tournament $tournament)
+    {
+        $this->authorize('delete', $tournament);
 
         $tournament->delete();
 
-
-        return response()->json(null, 204);
+        return redirect()
+            ->route('tournaments.index')
+            ->with('success', 'Tournament deleted.');
     }
 
-    public function showPage(Request $request, Tournament $tournament): \Inertia\Response
+    public function myTournaments()
     {
-        $tournament->load(['organizer', 'sportType', 'matches']);
-        $user = $request->user();
+        $tournaments = Tournament::where('organizer_id', auth()->id())
+            ->with('sportType', 'organizer')
+            ->latest()
+            ->paginate(5)
+            ->withQueryString();
 
-        $eligibleTeams = collect();
-        $myRegistration = null;
-
-        if ($tournament->sportType->is_team_based) {
-            $eligibleTeams = Team::where('captain_id', $user->id)
-                ->where('sport_type_id', $tournament->sport_type_id)
-                ->get(['id', 'name', 'logo']);
-
-            $myRegistration = Registration::where('tournament_id', $tournament->id)
-                ->whereIn('team_id', $eligibleTeams->pluck('id'))
-                ->first();
-
-            // Exclude already-registered teams from the eligible list
-            if ($myRegistration) {
-                $eligibleTeams = $eligibleTeams->reject(
-                    fn ($team) => $team->id === $myRegistration->team_id
-                );
-            }
-        } else {
-            $myRegistration = Registration::where('tournament_id', $tournament->id)
-                ->where('user_id', $user->id)
-                ->first();
-        }
-
-        return inertia('tournaments/showTournament', [
-            'tournament' => $tournament,
-            'eligibleTeams' => $eligibleTeams->values(),
-            'myRegistration' => $myRegistration,
-            'isOrganizer' => $tournament->organizer_id === $user->id,
-            'nextStatuses' => $tournament->organizer_id === $user->id
-                ? $tournament->nextStatuses()
-                : [],
-            'statusLabels' => Tournament::STATUS_LABELS,
+        return Inertia::render('tournaments/myTournaments', [
+            'tournaments' => $tournaments,
         ]);
     }
 
-    // TournamentController.php
-    public function transition(Request $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
+   public function manage(Tournament $tournament)
     {
-        if ($tournament->organizer_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->authorize('update', $tournament);
+
+        $tournament->load('sportType', 'stages.matches');
+
+        $registrationCounts = $tournament->registrations()
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $transitions = [
+            'draft' => ['open'],
+            'open' => ['closed'],
+            'closed' => ['open', 'in_progress'],
+            'in_progress' => ['completed'],
+            'completed' => [],
+        ];
+
+        return Inertia::render('tournaments/manage', [
+            'tournament' => $tournament,
+            'stagesLocked' => $tournament->hasGeneratedMatches(),
+            'registrationCounts' => [
+                'pending' => $registrationCounts['pending'] ?? 0,
+                'approved' => $registrationCounts['approved'] ?? 0,
+                'rejected' => $registrationCounts['rejected'] ?? 0,
+            ],
+            'maxParticipants' => $tournament->max_participants,
+            'readyForBracketGeneration' => $tournament->readyForBracketGeneration(),
+            'nextStatuses' => $transitions[$tournament->status] ?? [],
+        ]);
+    }
+
+    public function updateStatus(Request $request, Tournament $tournament)
+    {
+        $this->authorize('update', $tournament);
+
+        $transitions = [
+            'draft' => ['open'],
+            'open' => ['closed'],
+            'closed' => ['open', 'in_progress'],
+            'in_progress' => ['completed'],
+            'completed' => [],
+        ];
+
+        $allowed = $transitions[$tournament->status] ?? [];
 
         $request->validate([
-            'status' => ['required', 'string'],
+            'status' => ['required', 'string', function ($attribute, $value, $fail) use ($allowed) {
+                if (!in_array($value, $allowed, true)) {
+                    $fail('That status transition is not allowed from the current status.');
+                }
+            }],
         ]);
 
-        $tournament->transitionTo($request->input('status'));
+        $tournament->update(['status' => $request->status]);
 
-        return redirect()
-            ->back()
-            ->with('success', "Tournament status updated to \"{$tournament->fresh()->status}\".");
-    }
-
-    public function myTournaments(Request $request): \Inertia\Response
-    {
-        $tournaments = Tournament::with('sportType')
-            ->where('organizer_id', $request->user()->id)
-            ->latest()
-            ->get();
-
-        return inertia('tournaments/myTournaments', [
-            'tournaments' => $tournaments,
-            'statusLabels' => Tournament::STATUS_LABELS,
-        ]);
-    }
-
-    public function editPage(Request $request, Tournament $tournament): \Inertia\Response
-    {
-        if ($tournament->organizer_id !== $request->user()->id) {
-            abort(403);
-        }
-        if (in_array($tournament->status, ['in_progress', 'completed'])) {
-            abort(403, 'Cannot edit a tournament that is already in progress or completed.');
-        }
-
-        return inertia('tournaments/editTournament', [
-            'tournament' => $tournament,
-        ]);
+        return back()->with('success', 'Tournament status updated.');
     }
 }

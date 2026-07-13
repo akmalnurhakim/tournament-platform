@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Team;
+use App\Models\TeamMember;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class TeamController extends Controller
@@ -26,9 +28,14 @@ class TeamController extends Controller
     public function indexPage(): \Inertia\Response
     {
         $user = request()->user();
-        $teams = Team::with(['captain', 'sportType', 'members'])
-            ->where('captain_id', '!=', $user->id)
-            ->whereDoesntHave('members', fn ($q) => $q->where('users.id', $user->id))
+
+        $teams = Team::with([
+                'sportType',
+                'members.user',
+            ])
+            ->whereDoesntHave('members', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
             ->latest()
             ->paginate(9);
 
@@ -44,9 +51,10 @@ class TeamController extends Controller
     {
         $user = $request->user();
 
-        $teams = Team::with(['captain', 'sportType', 'members'])
-            ->where('captain_id', $user->id)
-            ->orWhereHas('members', fn ($q) => $q->where('users.id', $user->id))
+        $teams = Team::whereHas('members', function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })
+            ->with(['sportType', 'members'])
             ->latest()
             ->paginate(9);
 
@@ -67,21 +75,6 @@ class TeamController extends Controller
             ->with('success', "Team \"{$team->name}\" created.");
     }
 
-    // Used by the JSON API (routes/api.php) — expects a JSON body back.
-    // Keep this only as long as something actually consumes /api/teams
-    // as JSON; if nothing does, delete this method and the api.php route
-    // for it, and store() above becomes the only entry point.
-    public function storeJson(StoreTeamRequest $request): JsonResponse
-    {
-        $team = $this->createTeamFromRequest($request);
-
-        return response()->json($team->load(['captain', 'sportType']), 201);
-    }
-
-    // Shared logic: validation, file storage, team creation, and adding
-    // the creator to the roster are identical regardless of which entry
-    // point is used. Only the response shape (redirect vs JSON) differs,
-    // so that's the only thing left in the public methods above.
     private function createTeamFromRequest(StoreTeamRequest $request): Team
     {
         $validated = $request->validated();
@@ -90,18 +83,15 @@ class TeamController extends Controller
             $validated['logo'] = $request->file('logo')->store('logos', 'public');
         }
 
-        // captain_id is intentionally excluded from Team::$fillable so a
-        // request body can never set it directly. Because of that, it
-        // can't be passed into Team::create([...]) either — mass
-        // assignment silently drops any key not in $fillable, which is
-        // what caused the NOT NULL constraint failure. Setting it as a
-        // direct property assignment bypasses the mass-assignment guard
-        // while still keeping the protection against request spoofing.
-        $team = new Team($validated);
-        $team->captain_id = $request->user()->id;
-        $team->save();
+        $validated['invite_code'] = Str::upper(Str::random(8));
 
-        $team->members()->attach($request->user()->id, [
+        $team = Team::create($validated);
+
+        // members() is a hasMany to TeamMember, not a belongsToMany pivot,
+        // so records are created directly rather than attached.
+        $team->members()->create([
+            'user_id' => $request->user()->id,
+            'role' => 'captain',
             'joined_at' => now(),
         ]);
 
@@ -111,20 +101,25 @@ class TeamController extends Controller
     // Used by the Inertia web page (routes/web.php) — renders teams/showTeam.
     public function showPage(Request $request, Team $team): \Inertia\Response
     {
-        $team->load(['captain', 'sportType', 'members']);
+        $team->load([
+            'sportType',
+            'members.user',
+        ]);
 
         $user = $request->user();
-        $isMember = $team->isCaptain($user)
-            || $team->members()->where('users.id', $user->id)->exists();
+
+        $isMember = $team->members()
+            ->where('user_id', $user->id)
+            ->exists();
 
         $teamData = $team->toArray();
-        if (!$isMember) {
+
+        if (! $isMember) {
             unset($teamData['invite_code']);
         }
 
         return inertia('teams/showTeam', [
             'team' => $teamData,
-            'isCaptain' => $team->isCaptain($user),
             'isMember' => $isMember,
         ]);
     }

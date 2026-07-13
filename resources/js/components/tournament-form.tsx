@@ -1,11 +1,11 @@
 import { router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type SportType = {
     id: number;
     name: string;
     is_team_based: boolean;
-    players_on_field: number;
+    active_players: number;
     min_players: number;
     max_players: number;
 };
@@ -15,27 +15,31 @@ export type TournamentFormData = {
     name: string;
     description: string | null;
     sport_type_id: number;
-    is_team_based: boolean;
+    visibility: 'public' | 'private';
+    max_participants: number | null;
     start_date: string;
     end_date: string;
     status: string;
+    banner: string | null;
 };
 
-type TournamentFormErrors = Partial<Record<
-    'name' | 'description' | 'sport_type_id' | 'start_date' | 'end_date',
-    string
->>;
+type TournamentFormErrors = Partial<
+    Record<
+        'name' | 'description' | 'sport_type_id' | 'visibility' | 'start_date' | 'end_date' | 'banner' | 'max_participants',
+        string
+    >
+>;
 
 type TournamentFormProps = {
     /** Pass an existing tournament to switch into edit mode. Omit for create. */
     tournament?: TournamentFormData;
+    sportTypes: SportType[];
     flashSuccess?: string;
 };
 
-export function TournamentForm({ tournament, flashSuccess }: TournamentFormProps) {
+export function TournamentForm({ tournament, sportTypes, flashSuccess }: TournamentFormProps) {
     const isEditMode = !!tournament;
 
-    const [sports, setSports] = useState<SportType[]>([]);
     const [errors, setErrors] = useState<TournamentFormErrors>({});
     const [submitting, setSubmitting] = useState(false);
 
@@ -43,54 +47,37 @@ export function TournamentForm({ tournament, flashSuccess }: TournamentFormProps
         sport_type_id: tournament ? String(tournament.sport_type_id) : '',
         name: tournament?.name ?? '',
         description: tournament?.description ?? '',
-        is_team_based: tournament?.is_team_based ?? false,
-        start_date: tournament?.start_date
-            ? tournament.start_date.slice(0, 10)
-            : '',
-        end_date: tournament?.end_date
-            ? tournament.end_date.slice(0, 10)
-            : '',
+        visibility: tournament?.visibility ?? 'public',
+        start_date: tournament?.start_date ? tournament.start_date.slice(0, 10) : '',
+        end_date: tournament?.end_date ? tournament.end_date.slice(0, 10) : '',
+        banner: null as File | null,
+        max_participants: tournament?.max_participants ? String(tournament.max_participants) : '',
     });
 
-    useEffect(() => {
-        fetch('/api/sport-types')
-            .then((res) => res.json())
-            .then(setSports)
-            .catch((err) => console.error(err));
-    }, []);
-
     const selectedSport =
-        sports.find((s) => String(s.id) === form.sport_type_id) ?? null;
+        sportTypes.find((s) => String(s.id) === form.sport_type_id) ?? null;
 
     const updateField = (field: string, value: any) => {
         setForm((prev) => ({ ...prev, [field]: value }));
         setErrors((prev) => ({ ...prev, [field]: undefined }));
     };
 
-    const changeSport = (id: string) => {
-        const sport = sports.find((s) => String(s.id) === id);
-        setForm((prev) => ({
-            ...prev,
-            sport_type_id: id,
-            is_team_based: sport?.is_team_based ?? false,
-        }));
-        setErrors((prev) => ({ ...prev, sport_type_id: undefined }));
-    };
-
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
 
-        const url = isEditMode
-            ? `/tournaments/${tournament!.id}`
-            : '/tournaments';
-
-        const method = isEditMode ? router.patch : router.post;
-
-        method(url, form, {
-            onError: (errs) => setErrors(errs as TournamentFormErrors),
+        const url = isEditMode ? `/tournaments/${tournament!.id}` : '/tournaments';
+        const options = {
+            forceFormData: true,
+            onError: (errs: any) => setErrors(errs as TournamentFormErrors),
             onFinish: () => setSubmitting(false),
-        });
+        };
+
+        if (isEditMode) {
+            router.post(url, { ...form, _method: 'patch' }, options);
+        } else {
+            router.post(url, form, options);
+        }
     };
 
     return (
@@ -99,10 +86,7 @@ export function TournamentForm({ tournament, flashSuccess }: TournamentFormProps
                 {isEditMode ? 'Edit Tournament' : 'Create Tournament'}
             </h1>
 
-            <form
-                onSubmit={submit}
-                className="space-y-5 border rounded-xl p-6 shadow"
-            >
+            <form onSubmit={submit} className="space-y-5 border rounded-xl p-6 shadow">
                 {/* Name */}
                 <div>
                     <label className="font-medium">Tournament Name</label>
@@ -112,9 +96,7 @@ export function TournamentForm({ tournament, flashSuccess }: TournamentFormProps
                         onChange={(e) => updateField('name', e.target.value)}
                         required
                     />
-                    {errors.name && (
-                        <p className="text-sm text-red-600 mt-1">{errors.name}</p>
-                    )}
+                    {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
                 </div>
 
                 {/* Description */}
@@ -131,17 +113,34 @@ export function TournamentForm({ tournament, flashSuccess }: TournamentFormProps
                     )}
                 </div>
 
+                {/* Banner */}
+                <div>
+                    <label className="font-medium">Banner Image</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="w-full border rounded p-2"
+                        onChange={(e) => updateField('banner', e.target.files?.[0] ?? null)}
+                    />
+                    {tournament?.banner && !form.banner && (
+                        <p className="text-xs text-gray-500 mt-1">
+                            Current banner will be kept unless you upload a new one.
+                        </p>
+                    )}
+                    {errors.banner && <p className="text-sm text-red-600 mt-1">{errors.banner}</p>}
+                </div>
+
                 {/* Sport */}
                 <div>
                     <label className="font-medium">Sport Type</label>
                     <select
                         className="w-full border rounded p-2"
                         value={form.sport_type_id}
-                        onChange={(e) => changeSport(e.target.value)}
+                        onChange={(e) => updateField('sport_type_id', e.target.value)}
                         required
                     >
                         <option value="">Select sport</option>
-                        {sports.map((sport) => (
+                        {sportTypes.map((sport) => (
                             <option key={sport.id} value={sport.id}>
                                 {sport.name}
                             </option>
@@ -152,21 +151,58 @@ export function TournamentForm({ tournament, flashSuccess }: TournamentFormProps
                     )}
                 </div>
 
-                {/* Sport info */}
+                {/* Sport info (read-only preview, derived from selected sport) */}
                 {selectedSport && (
                     <div className="rounded p-4 bg-muted/50 text-sm space-y-1">
                         <p>Type: {selectedSport.is_team_based ? 'Team' : 'Individual'}</p>
                         {selectedSport.is_team_based && (
                             <>
-                                <p>Players on field: {selectedSport.players_on_field}</p>
+                                <p>Players on field: {selectedSport.active_players}</p>
                                 <p>
-                                    Squad size: {selectedSport.min_players} –{' '}
-                                    {selectedSport.max_players}
+                                    Squad size: {selectedSport.min_players} – {selectedSport.max_players}
                                 </p>
                             </>
                         )}
                     </div>
                 )}
+
+                {/* Visibility */}
+                <div>
+                    <label className="font-medium">Visibility</label>
+                    <select
+                        className="w-full border rounded p-2"
+                        value={form.visibility}
+                        onChange={(e) => updateField('visibility', e.target.value)}
+                        required
+                    >
+                        <option value="public">Public — anyone can view and register</option>
+                        <option value="private">Private — invite only</option>
+                    </select>
+                    {errors.visibility && (
+                        <p className="text-sm text-red-600 mt-1">{errors.visibility}</p>
+                    )}
+                </div>
+
+                {/* Max participants */}
+                <div>
+                    <label className="font-medium">
+                        Max {selectedSport?.is_team_based ? 'Teams' : 'Participants'}
+                    </label>
+                    <input
+                        type="number"
+                        min={2}
+                        placeholder="Leave blank for no limit"
+                        className="w-full border rounded p-2"
+                        value={form.max_participants}
+                        onChange={(e) => updateField('max_participants', e.target.value)}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                        Optional. Leave blank to accept unlimited registrations.
+                    </p>
+                    {errors.max_participants && (
+                        <p className="text-sm text-red-600 mt-1">{errors.max_participants}</p>
+                    )}
+                </div>
 
                 {/* Dates */}
                 <div className="grid md:grid-cols-2 gap-4">

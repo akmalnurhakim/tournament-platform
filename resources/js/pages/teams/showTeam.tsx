@@ -11,14 +11,24 @@ type Team = {
     logo: string | null;
     invite_code: string;
     status: string;
-    captain: { id: number; name: string };
-    sport_type: { id: number; name: string };
-    members: { id: number; name: string }[];
+    sport_type: {
+        id: number;
+        name: string;
+    };
+    members: {
+        id: number;
+        role: string;
+        position: string | null;
+        jersey_number: number | null;
+        user: {
+            id: number;
+            name: string;
+        };
+    }[];
 };
 
 type PageProps = {
     team: Team;
-    isCaptain: boolean;
     isMember: boolean;
     flash: {
         success?: string;
@@ -27,7 +37,7 @@ type PageProps = {
 };
 
 export default function ShowTeam() {
-    const { team, isCaptain, isMember, flash } = usePage<PageProps>().props;
+    const { team, isMember, flash } = usePage<PageProps>().props;
 
     return (
         <>
@@ -59,17 +69,6 @@ export default function ShowTeam() {
                             )}
                         </div>
 
-                        {isCaptain && (
-                            <div className="absolute right-8 top-6">
-                                <Button asChild size="sm" variant="outline">
-                                    <Link href={`/teams/${team.id}/edit`}>
-                                        <Pencil className="mr-2 h-4 w-4" />
-                                        Edit Team
-                                    </Link>
-                                </Button>
-                            </div>
-                        )}
-
                     </div>
 
                     <div className="px-8 pb-8 pt-14">
@@ -93,16 +92,6 @@ export default function ShowTeam() {
                             </p>
 
                             <div className="grid grid-cols-3 gap-6 pt-2">
-
-                                <div>
-                                    <p className="text-xs uppercase text-muted-foreground">
-                                        Captain
-                                    </p>
-
-                                    <p className="font-medium">
-                                        {team.captain.name}
-                                    </p>
-                                </div>
 
                                 {isMember && (
                                     <div>
@@ -153,15 +142,24 @@ export default function ShowTeam() {
                                 className="flex w-24 flex-col items-center"
                             >
                                 <div className="flex h-20 w-20 items-center justify-center rounded-full border text-xl font-semibold">
-                                    {member.name.charAt(0).toUpperCase()}
+                                    {member.user.name.charAt(0).toUpperCase()}
                                 </div>
 
                                 <p className="mt-3 text-center text-sm font-medium">
-                                    {member.name}
+                                    {member.user.name}
                                 </p>
+
+                                <p className="text-xs text-muted-foreground">
+                                    {member.role}
+                                </p>
+
+                                {member.jersey_number && (
+                                    <p className="text-xs text-muted-foreground">
+                                        #{member.jersey_number}
+                                    </p>
+                                )}
                             </div>
                         ))}
-
                     </div>
 
                 </div>

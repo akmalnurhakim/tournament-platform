@@ -18,17 +18,19 @@ use App\Http\Controllers\SportTypeController;
 
 // Anyone can browse tournaments
 Route::apiResource('tournaments', TournamentController::class)
-    ->only([
-        'index',
-        'show'
+    ->only(['index', 'show'])
+    ->names([
+        'index' => 'api.tournaments.index',
+        'show' => 'api.tournaments.show',
     ]);
 
 
 // Anyone can see available sports
 Route::apiResource('sport-types', SportTypeController::class)
-    ->only([
-        'index',
-        'show'
+    ->only(['index', 'show'])
+    ->names([
+        'index' => 'api.sport-types.index',
+        'show' => 'api.sport-types.show',
     ]);
 
 
@@ -41,11 +43,6 @@ Route::middleware('auth')->group(function () {
     Route::apiResource('matches', MatchController::class);
 
     //teams
-    // 'store' is excluded here and wired manually below to storeJson,
-    // since TeamController::store() now returns an Inertia redirect for
-    // the web form in routes/web.php — apiResource always calls store()
-    // by convention, so a JSON-returning method needs its own name and
-    // its own explicit route.
     Route::apiResource('teams', TeamController::class)
     ->except(['store'])
     ->names([
@@ -73,13 +70,6 @@ Route::get('/dashboard-stats', function () {
         'tournaments' => \App\Models\Tournament::count(),
 
         'teams' => \App\Models\Team::count(),
-
-        'players' => \App\Models\Player::count(),
-
-        'matches' => \App\Models\Matches::where(
-            'status',
-            'upcoming'
-        )->count(),
     ];
 
 });

@@ -1,5 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
 import { dashboard } from '@/routes';
 
 type SportType = {
@@ -17,54 +17,38 @@ type Tournament = {
     sport_type?: SportType;
 };
 
+type PaginatedTournaments = {
+    data: Tournament[];
+    links: { url: string | null; label: string; active: boolean }[];
+    meta?: { current_page: number; last_page: number };
+};
+
+type PageProps = {
+    tournaments: PaginatedTournaments;
+    sportTypes: SportType[];
+};
+
 export default function TournamentIndex() {
-    const [tournaments, setTournaments] = useState<Tournament[]>([]);
+    const { tournaments, sportTypes } = usePage<PageProps>().props;
+
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [sportFilter, setSportFilter] = useState('');
 
     const formatDate = (date: string) => {
-        return new Date(date).toLocaleDateString(
-            'en-MY',
-            {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric'
-            }
-        );
+        return new Date(date).toLocaleDateString('en-MY', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        });
     };
 
-    useEffect(() => {
-        fetch('/api/tournaments')
-            .then((res) => res.json())
-            .then((data) => {
-                if (Array.isArray(data)) {
-                    setTournaments(data);
-                } else {
-                    setTournaments([]);
-                }
-            })
-            .catch((err) => console.error(err));
-    }, []);
-
-    const sportTypes = useMemo(() => {
-        return tournaments
-            .map(t => t.sport_type)
-            .filter((s): s is SportType => Boolean(s))
-            .filter(
-                (sport, index, self) =>
-                    index === self.findIndex(
-                        s => s.id === sport.id
-                    )
-            );
-    }, [tournaments]);
-
     const statuses = useMemo(() => {
-        return [...new Set(tournaments.map((t) => t.status))];
-    }, [tournaments]);
+        return [...new Set(tournaments.data.map((t) => t.status))];
+    }, [tournaments.data]);
 
     const filteredTournaments = useMemo(() => {
-        return tournaments.filter((tournament) => {
+        return tournaments.data.filter((tournament) => {
             const matchesSearch = tournament.name
                 ?.toLowerCase()
                 .includes(search.toLowerCase());
@@ -73,23 +57,19 @@ export default function TournamentIndex() {
                 !statusFilter || tournament.status === statusFilter;
 
             const matchesSport =
-                !sportFilter ||
-                String(tournament.sport_type_id) === sportFilter;
+                !sportFilter || String(tournament.sport_type_id) === sportFilter;
 
             return matchesSearch && matchesStatus && matchesSport;
         });
-    }, [tournaments, search, statusFilter, sportFilter]);
+    }, [tournaments.data, search, statusFilter, sportFilter]);
 
     return (
         <>
             <Head title="Browse Tournaments" />
 
             <div className="max-w-6xl mx-auto p-6">
-                <h1 className="text-2xl font-bold mb-6">
-                    Browse Tournaments
-                </h1>
+                <h1 className="text-2xl font-bold mb-6">Browse Tournaments</h1>
 
-                {/* Search & Filters */}
                 <div className="mb-6 grid gap-4 md:grid-cols-3">
                     <input
                         type="text"
@@ -105,7 +85,6 @@ export default function TournamentIndex() {
                         className="border rounded-lg px-4 py-2"
                     >
                         <option value="">All Statuses</option>
-
                         {statuses.map((status) => (
                             <option key={status} value={status}>
                                 {status}
@@ -119,12 +98,8 @@ export default function TournamentIndex() {
                         className="border rounded-lg px-4 py-2"
                     >
                         <option value="">All Sports</option>
-
                         {sportTypes.map((sport) => (
-                            <option
-                                key={sport.id}
-                                value={sport.id}
-                            >
+                            <option key={sport.id} value={sport.id}>
                                 {sport.name}
                             </option>
                         ))}
@@ -136,9 +111,7 @@ export default function TournamentIndex() {
                 </div>
 
                 {filteredTournaments.length === 0 ? (
-                    <p className="text-gray-500">
-                        No tournaments match your search.
-                    </p>
+                    <p className="text-gray-500">No tournaments match your search.</p>
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2">
                         {filteredTournaments.map((tournament) => (
@@ -146,9 +119,7 @@ export default function TournamentIndex() {
                                 key={tournament.id}
                                 className="border rounded-lg p-4 shadow hover:shadow-md transition"
                             >
-                                <h2 className="text-xl font-semibold">
-                                    {tournament.name}
-                                </h2>
+                                <h2 className="text-xl font-semibold">{tournament.name}</h2>
 
                                 <p className="text-sm text-gray-600">
                                     Sport Type: {tournament.sport_type?.name}
@@ -159,8 +130,7 @@ export default function TournamentIndex() {
                                 </p>
 
                                 <p className="text-sm text-gray-600">
-                                    {formatDate(tournament.start_date)}
-                                    {' → '}
+                                    {formatDate(tournament.start_date)} {' → '}
                                     {formatDate(tournament.end_date)}
                                 </p>
 
@@ -171,6 +141,21 @@ export default function TournamentIndex() {
                                     View Details
                                 </Link>
                             </div>
+                        ))}
+                    </div>
+                )}
+
+                {tournaments.links.length > 3 && (
+                    <div className="mt-8 flex gap-2 flex-wrap">
+                        {tournaments.links.map((link, i) => (
+                            <Link
+                                key={i}
+                                href={link.url ?? '#'}
+                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                className={`px-3 py-1 border rounded text-sm ${
+                                    link.active ? 'bg-blue-600 text-white' : 'text-gray-700'
+                                } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
+                            />
                         ))}
                     </div>
                 )}

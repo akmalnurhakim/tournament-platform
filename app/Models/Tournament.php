@@ -3,91 +3,88 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Storage;
 
 class Tournament extends Model
 {
     protected $fillable = [
-        'name',
-        'sport_type_id',
-        'description',
-        'is_team_based',
-        'start_date',
-        'end_date',
-        'status',
-        'organizer_id',
+        'organizer_id', 'sport_type_id', 'name', 'format', 'description',
+        'venue', 'location', 'visibility', 'invite_code', 'rules',
+        'registration_start', 'registration_end', 'max_participants',
+        'start_date', 'end_date', 'status',
     ];
 
+    protected $appends = ['banner_url'];
+
     protected $casts = [
-        'is_team_based' => 'boolean',
+        'registration_start' => 'datetime',
+        'registration_end' => 'datetime',
         'start_date' => 'date',
         'end_date' => 'date',
     ];
 
-    // Valid forward transitions
-    const TRANSITIONS = [
-        'draft'       => ['open'],
-        'open'        => ['closed'],
-        'closed'      => ['open', 'in_progress'], // closed → open is the one allowed revert
-        'in_progress' => ['completed'],
-        'completed'   => [],
-    ];
-
-    // Human-readable labels for the UI
-    const STATUS_LABELS = [
-        'draft'       => 'Draft',
-        'open'        => 'Open for Registration',
-        'closed'      => 'Registration Closed',
-        'in_progress' => 'In Progress',
-        'completed'   => 'Completed',
-    ];
-
-    public function canTransitionTo(string $newStatus): bool
-    {
-        return in_array($newStatus, self::TRANSITIONS[$this->status] ?? []);
-    }
-
-    public function transitionTo(string $newStatus): void
-    {
-        if (!$this->canTransitionTo($newStatus)) {
-            throw ValidationException::withMessages([
-                'status' => "Cannot transition from \"{$this->status}\" to \"{$newStatus}\".",
-            ]);
-        }
-
-        $this->update(['status' => $newStatus]);
-    }
-
-    public function nextStatuses(): array
-    {
-        return self::TRANSITIONS[$this->status] ?? [];
-    }
-
-    public function isOpen(): bool       { return $this->status === 'open'; }
-    public function isDraft(): bool      { return $this->status === 'draft'; }
-    public function isClosed(): bool     { return $this->status === 'closed'; }
-    public function isInProgress(): bool { return $this->status === 'in_progress'; }
-    public function isCompleted(): bool  { return $this->status === 'completed'; }
-
-    public function organizer(): BelongsTo
+    public function organizer()
     {
         return $this->belongsTo(User::class, 'organizer_id');
     }
 
-    public function sportType(): BelongsTo
+    public function sportType()
     {
         return $this->belongsTo(SportType::class);
     }
 
-    public function matches(): HasMany
+    public function committees()
     {
-        return $this->hasMany(Matches::class);
+        return $this->hasMany(TournamentCommittee::class);
     }
 
-    public function registrations(): HasMany
+    public function stages()
+    {
+        return $this->hasMany(TournamentStage::class);
+    }
+
+    public function registrations()
     {
         return $this->hasMany(Registration::class);
+    }
+
+    protected function bannerUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->banner
+                ? Storage::url($this->banner)
+                : '/banners/default.jpg',
+        );
+    }
+
+    public function hasGeneratedMatches(): bool
+    {
+        return $this->stages()
+            ->whereHas('matches')
+            ->exists();
+    }
+
+    public function approvedRegistrationsCount(): int
+    {
+        return $this->registrations()->where('status', 'approved')->count();
+    }
+
+    public function hasReachedParticipantLimit(): bool
+    {
+        if (is_null($this->max_participants)) {
+            return false; // unlimited — no cap to reach
+        }
+
+        return $this->approvedRegistrationsCount() >= $this->max_participants;
+    }
+
+    public function readyForBracketGeneration(): bool
+    {
+        if (is_null($this->max_participants)) {
+            return false; // no defined target, so "reached the required number" is undefined
+        }
+
+        return $this->approvedRegistrationsCount() >= $this->max_participants;
     }
 }

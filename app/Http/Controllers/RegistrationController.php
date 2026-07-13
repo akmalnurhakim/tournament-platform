@@ -2,124 +2,82 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreRegistrationRequest;
+use App\Models\Participant;
 use App\Models\Registration;
 use App\Models\Team;
 use App\Models\Tournament;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class RegistrationController extends Controller
 {
-    public function store(Request $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
+    public function store(StoreRegistrationRequest $request, Tournament $tournament)
     {
-        $tournament->load('sportType');
-        if (!$tournament->isOpen()) {
-        throw ValidationException::withMessages([
-            'tournament' => 'This tournament is not currently open for registration.',
-        ]);
+        $data = $request->validated();
+
+        DB::transaction(function () use ($request, $tournament, $data) {
+            $participant = Participant::create([
+                'participant_type' => isset($data['team_id']) ? 'team' : 'individual',
+                'team_id' => $data['team_id'] ?? null,
+                'user_id' => isset($data['team_id']) ? null : $request->user()->id,
+            ]);
+
+            Registration::create([
+                'tournament_id' => $tournament->id,
+                'participant_id' => $participant->id,
+                'status' => 'pending',
+                'registrated_at' => now(),
+            ]);
+        });
+
+        return back()->with('success', 'Registration submitted. Waiting for organizer approval.');
     }
-        $user = $request->user();
 
-        if ($tournament->sportType->is_team_based) {
-            $validated = $request->validate([
-                'team_id' => ['required', 'integer', 'exists:teams,id'],
-            ]);
+    public function accept(Registration $registration)
+    {
+        $this->authorize('review', $registration);
 
-            $team = Team::with('sportType')->findOrFail($validated['team_id']);
+        $tournament = $registration->tournament;
 
-            if (!$team->isCaptain($user)) {
-                throw ValidationException::withMessages([
-                    'team_id' => 'Only the team captain can register this team.',
-                ]);
-            }
-
-            if ($team->sport_type_id !== $tournament->sport_type_id) {
-                throw ValidationException::withMessages([
-                    'team_id' => 'This team\'s sport does not match the tournament.',
-                ]);
-            }
-
-            $alreadyRegistered = Registration::where('tournament_id', $tournament->id)
-                ->where('team_id', $team->id)
-                ->exists();
-
-            if ($alreadyRegistered) {
-                throw ValidationException::withMessages([
-                    'team_id' => 'This team is already registered for this tournament.',
-                ]);
-            }
-
-            Registration::create([
-                'tournament_id' => $tournament->id,
-                'team_id' => $team->id,
-                'status' => 'pending',
-            ]);
-        } else {
-            $alreadyRegistered = Registration::where('tournament_id', $tournament->id)
-                ->where('user_id', $user->id)
-                ->exists();
-
-            if ($alreadyRegistered) {
-                throw ValidationException::withMessages([
-                    'user_id' => 'You are already registered for this tournament.',
-                ]);
-            }
-
-            Registration::create([
-                'tournament_id' => $tournament->id,
-                'user_id' => $user->id,
-                'status' => 'pending',
-            ]);
+        if ($tournament->hasReachedParticipantLimit()) {
+            return back()->with('error', 'This tournament has already reached its maximum approved participants.');
         }
 
-        return redirect()
-            ->back()
-            ->with('success', 'Registration submitted — awaiting approval.');
+        $registration->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Registration approved.');
     }
 
-    public function accept(Request $request, Registration $registration): \Illuminate\Http\RedirectResponse
+    public function reject(Registration $registration)
     {
-        $registration->load('tournament');
-        $this->authorizeOrganizer($registration->tournament, $request->user());
-
-        $registration->update(['status' => 'accepted']);
-
-        return redirect()->back()->with('success', 'Registration accepted.');
-    }
-
-    public function reject(Request $request, Registration $registration): \Illuminate\Http\RedirectResponse
-    {
-        $registration->load('tournament');
-        $this->authorizeOrganizer($registration->tournament, $request->user());
+        $this->authorize('review', $registration);
 
         $registration->update(['status' => 'rejected']);
 
-        return redirect()->back()->with('success', 'Registration rejected.');
+        return back()->with('success', 'Registration rejected.');
     }
 
-    private function authorizeOrganizer(Tournament $tournament, $user): void
+    public function manage(Tournament $tournament)
     {
-        if ($tournament->organizer_id !== $user->id) {
-            abort(403, 'Only the tournament organizer can manage registrations.');
-        }
-    }
-    public function manage(Request $request, Tournament $tournament): \Inertia\Response
-    {
-        $this->authorizeOrganizer($tournament, $request->user());
+        $this->authorize('update', $tournament);
 
-        $registrations = Registration::with([
-            'team.captain',
-            'team.sportType',
-            'team.members',
-            'user',
-        ])
-            ->where('tournament_id', $tournament->id)
+        $registrations = $tournament->registrations()
+            ->with(['participant.team', 'participant.user'])
             ->latest()
-            ->get();
+            ->get()
+            ->groupBy('status');
 
-        return inertia('tournaments/manageRegistrations', [
-            'tournament' => $tournament->only(['id', 'name']),
-            'registrations' => $registrations,
+        return Inertia::render('registrations/manage', [
+            'tournament' => $tournament,
+            'pending' => $registrations->get('pending', collect())->values(),
+            'approved' => $registrations->get('approved', collect())->values(),
+            'rejected' => $registrations->get('rejected', collect())->values(),
+            'canAddGuest' => auth()->user()->can('addGuest', $tournament),
         ]);
     }
 }

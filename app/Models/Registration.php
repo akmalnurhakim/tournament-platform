@@ -2,33 +2,33 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Registration extends Model
 {
-    use HasFactory;
+    protected $fillable = [
+        'tournament_id', 'participant_id', 'status', 'remarks',
+        'registrated_at', 'approved_at', 'approved_by', 'withdrawn_at',
+    ];
 
-    protected $fillable = ['tournament_id', 'team_id', 'user_id', 'status'];
+    protected $casts = [
+        'registrated_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'withdrawn_at' => 'datetime',
+    ];
 
-    public function tournament(): BelongsTo
+    public function tournament()
     {
         return $this->belongsTo(Tournament::class);
     }
 
-    public function team(): BelongsTo
+    public function participant()
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsTo(Participant::class);
     }
 
-    public function user(): BelongsTo
+    public function approver()
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function isTeamRegistration(): bool
-    {
-        return $this->team_id !== null;
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }
