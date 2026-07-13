@@ -1,8 +1,6 @@
-import { Head, usePage, Link } from '@inertiajs/react';
-import { dashboard } from '@/routes';
+import { Head, usePage} from '@inertiajs/react';
 import Toast from '@/components/toast';
-import { Button } from '@/components/ui/button';
-import { Pencil } from 'lucide-react';
+import { dashboard } from '@/routes';
 
 type Team = {
     id: number;

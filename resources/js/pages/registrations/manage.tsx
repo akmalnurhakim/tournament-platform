@@ -1,7 +1,8 @@
 import { Head, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { dashboard } from '@/routes';
-import { Participant, participantName } from '@/types/tournament';
+import type { Participant} from '@/types/tournament';
+import { participantName } from '@/types/tournament';
 
 type Registration = {
     id: number;

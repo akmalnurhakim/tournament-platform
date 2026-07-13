@@ -190,7 +190,10 @@ function StagesPanel({ tournament, stagesLocked }: { tournament: Tournament; sta
     };
 
     const removeStage = (stageId: number) => {
-        if (!confirm('Remove this stage?')) return;
+        if (!confirm('Remove this stage?')) {
+return;
+}
+
         router.delete(`/tournaments/${tournament.id}/stages/${stageId}`, {
             preserveScroll: true,
         });

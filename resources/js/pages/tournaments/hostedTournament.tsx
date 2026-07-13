@@ -1,6 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { dashboard } from '@/routes';
 import { TournamentRegistration } from '@/components/tournament-registration';
+import { dashboard } from '@/routes';
 
 type SportType = {
     id: number;

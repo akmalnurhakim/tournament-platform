@@ -1,8 +1,8 @@
 // resources/js/pages/teams/joinTeam.tsx
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { dashboard } from '@/routes';
 import Toast from '@/components/toast';
+import { dashboard } from '@/routes';
 
 type PageProps = {
     flash: { success?: string; error?: string };

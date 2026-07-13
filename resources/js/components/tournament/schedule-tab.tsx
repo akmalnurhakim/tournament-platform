@@ -1,4 +1,5 @@
-import { Stage, participantName } from '@/types/tournament';
+import type { Stage} from '@/types/tournament';
+import { participantName } from '@/types/tournament';
 
 export function ScheduleTab({ stages }: { stages: Stage[] }) {
     const allMatches = stages.flatMap((s) => s.matches.map((m) => ({ ...m, stageName: s.name })));
@@ -12,7 +13,10 @@ export function ScheduleTab({ stages }: { stages: Stage[] }) {
     }
 
     const formatDateTime = (date: string | null) => {
-        if (!date) return 'TBD';
+        if (!date) {
+return 'TBD';
+}
+
         return new Date(date).toLocaleString('en-MY', {
             day: '2-digit',
             month: 'short',

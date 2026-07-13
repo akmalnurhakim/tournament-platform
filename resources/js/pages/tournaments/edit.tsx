@@ -1,6 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
+import type { TournamentFormData } from '@/components/tournament-form';
+import { TournamentForm } from '@/components/tournament-form';
 import { dashboard } from '@/routes';
-import { TournamentForm, TournamentFormData } from '@/components/tournament-form';
 
 type SportType = {
     id: number;
@@ -14,16 +15,15 @@ type SportType = {
 type PageProps = {
     tournament: TournamentFormData;
     sportTypes: SportType[];
-    flash: { success?: string; error?: string };
 };
 
 export default function EditTournament() {
-    const { tournament, sportTypes, flash } = usePage<PageProps>().props;
+    const { tournament, sportTypes} = usePage<PageProps>().props;
 
     return (
         <>
             <Head title={`Edit ${tournament.name}`} />
-            <TournamentForm tournament={tournament} sportTypes={sportTypes} flashSuccess={flash?.success} />
+            <TournamentForm tournament={tournament} sportTypes={sportTypes} />
         </>
     );
 }

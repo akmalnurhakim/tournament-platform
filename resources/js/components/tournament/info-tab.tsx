@@ -1,4 +1,4 @@
-import { Tournament } from '@/types/tournament';
+import type { Tournament } from '@/types/tournament';
 
 export function InfoTab({ tournament }: { tournament: Tournament }) {
     const isTeamBased = tournament.sport_type?.is_team_based ?? false;

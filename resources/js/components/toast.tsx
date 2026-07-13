@@ -12,10 +12,13 @@ export default function Toast({ message, variant = 'success', duration = 4000 }:
 
     useEffect(() => {
         const timer = setTimeout(() => setVisible(false), duration);
+
         return () => clearTimeout(timer);
     }, [duration]);
 
-    if (!visible) return null;
+    if (!visible) {
+return null;
+}
 
     const styles = variant === 'success'
         ? 'bg-green-50 border-green-300 text-green-800'

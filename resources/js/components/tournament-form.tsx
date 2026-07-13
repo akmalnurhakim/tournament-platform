@@ -34,10 +34,9 @@ type TournamentFormProps = {
     /** Pass an existing tournament to switch into edit mode. Omit for create. */
     tournament?: TournamentFormData;
     sportTypes: SportType[];
-    flashSuccess?: string;
 };
 
-export function TournamentForm({ tournament, sportTypes, flashSuccess }: TournamentFormProps) {
+export function TournamentForm({ tournament, sportTypes}: TournamentFormProps) {
     const isEditMode = !!tournament;
 
     const [errors, setErrors] = useState<TournamentFormErrors>({});

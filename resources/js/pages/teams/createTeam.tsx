@@ -1,6 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
-import { dashboard } from '@/routes';
 import { TeamForm } from '@/components/team-form';
+import { dashboard } from '@/routes';
 
 type PageProps = {
     flash: { success?: string; error?: string };

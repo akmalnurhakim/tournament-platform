@@ -1,6 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
+import type { TeamFormTeam } from '@/components/team-form';
+import { TeamForm } from '@/components/team-form';
 import { dashboard } from '@/routes';
-import { TeamForm, TeamFormTeam } from '@/components/team-form';
 
 type PageProps = {
     team: TeamFormTeam;

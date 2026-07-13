@@ -1,14 +1,14 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { dashboard } from '@/routes';
+import { Trophy, Users, ListOrdered, Calendar, MapPin, Settings } from 'lucide-react';
 import { useState } from 'react';
-import { Trophy, Users, ListOrdered, Calendar, UserPlus, MapPin, Settings } from 'lucide-react';
-import { Tournament } from '@/types/tournament';
 import { InfoTab } from '@/components/tournament/info-tab';
 import { MyTeamTab } from '@/components/tournament/my-team-tab';
-import { StandingsTab } from '@/components/tournament/standings-tab';
-import { ScheduleTab } from '@/components/tournament/schedule-tab';
 import { RegistrationModal } from '@/components/tournament/registration-modal';
-import { MyRegistration } from '@/types/tournament';
+import { ScheduleTab } from '@/components/tournament/schedule-tab';
+import { StandingsTab } from '@/components/tournament/standings-tab';
+import { dashboard } from '@/routes';
+import type { Tournament } from '@/types/tournament';
+import type { MyRegistration } from '@/types/tournament';
 
 type PageProps = {
     tournament: Tournament;

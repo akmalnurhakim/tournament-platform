@@ -1,6 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
-import { dashboard } from '@/routes';
 import { TeamGrid } from '@/components/team-grid';
+import { dashboard } from '@/routes';
 
 type PageProps = {
     teams: { data: any[] };

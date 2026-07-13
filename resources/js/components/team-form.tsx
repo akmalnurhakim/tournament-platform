@@ -76,13 +76,16 @@ export function TeamForm({ team, flashSuccess }: TeamFormProps) {
         setSubmitting(true);
 
         const payload = new FormData();
+
         if (isEditMode) {
             // Method spoofing — required for PATCH requests that carry a file.
             payload.append('_method', 'patch');
         }
+
         payload.append('name', form.name);
         payload.append('sport_type_id', form.sport_type_id);
         payload.append('description', form.description);
+
         if (logoFile) {
             payload.append('logo', logoFile);
         }

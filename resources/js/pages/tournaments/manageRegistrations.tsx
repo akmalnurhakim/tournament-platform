@@ -1,8 +1,8 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
 import { X } from 'lucide-react';
-import { dashboard } from '@/routes';
+import { useState } from 'react';
 import Toast from '@/components/toast';
+import { dashboard } from '@/routes';
 
 type TeamDetail = {
     id: number;

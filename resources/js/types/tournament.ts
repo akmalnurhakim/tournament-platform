@@ -58,8 +58,17 @@ export type Tournament = {
 };
 
 export function participantName(p: Participant | null): string {
-    if (!p) return 'TBD';
-    if (p.participant_type === 'team') return p.team?.name ?? 'Unknown team';
-    if (p.participant_type === 'guest') return p.guest_name ?? 'Guest';
+    if (!p) {
+return 'TBD';
+}
+
+    if (p.participant_type === 'team') {
+return p.team?.name ?? 'Unknown team';
+}
+
+    if (p.participant_type === 'guest') {
+return p.guest_name ?? 'Guest';
+}
+
     return p.user?.name ?? 'Unknown player';
 }

@@ -1,4 +1,5 @@
-import { Stage, participantName } from '@/types/tournament';
+import type { Stage} from '@/types/tournament';
+import { participantName } from '@/types/tournament';
 
 export function StandingsTab({ stages }: { stages: Stage[] }) {
     if (stages.length === 0) {

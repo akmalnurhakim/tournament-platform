@@ -1,4 +1,5 @@
-import { Tournament, participantName } from '@/types/tournament';
+import type { Tournament} from '@/types/tournament';
+import { participantName } from '@/types/tournament';
 
 export function MyTeamTab({ tournament }: { tournament: Tournament }) {
     if (tournament.registrations.length === 0) {
