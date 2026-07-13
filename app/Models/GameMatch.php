@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GameMatch extends Model
 {
@@ -23,33 +25,39 @@ class GameMatch extends Model
         'ended_at' => 'datetime',
     ];
 
-    public function stage()
+    /** @return BelongsTo<TournamentStage, $this> */
+    public function stage(): BelongsTo
     {
-        return $this->belongsTo(TournamentStage::class, 'stage_id');
+        return $this->belongsTo(TournamentStage::class);
     }
 
-    public function participantA()
+    /** @return BelongsTo<Participant, $this> */
+    public function participantA(): BelongsTo
     {
-        return $this->belongsTo(Participant::class, 'participant_a_id');
+        return $this->belongsTo(Participant::class, 'participant_a_id'); // adjust FK
     }
 
-    public function participantB()
+    /** @return BelongsTo<Participant, $this> */
+    public function participantB(): BelongsTo
     {
-        return $this->belongsTo(Participant::class, 'participant_b_id');
+        return $this->belongsTo(Participant::class, 'participant_b_id'); // adjust FK
     }
 
-    public function winner()
+    /** @return BelongsTo<Participant, $this> */
+    public function winner(): BelongsTo
     {
-        return $this->belongsTo(Participant::class, 'winner_participant_id');
+        return $this->belongsTo(Participant::class, 'winner_id'); // adjust FK
     }
 
-    public function nextMatch()
+    /** @return BelongsTo<GameMatch, $this> */
+    public function nextMatch(): BelongsTo
     {
-        return $this->belongsTo(GameMatch::class, 'next_match_id');
+        return $this->belongsTo(GameMatch::class, 'next_match_id'); // adjust FK
     }
 
-    public function events()
+    /** @return HasMany<MatchEvent, $this> */
+    public function events(): HasMany
     {
-        return $this->hasMany(MatchEvent::class, 'match_id');
+        return $this->hasMany(MatchEvent::class);
     }
 }

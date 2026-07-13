@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
 
 class TournamentController extends Controller
 {
-    public function index()
+    public function index(): \Inertia\Response
     {
         $tournaments = Tournament::where('visibility', 'public')
             ->with('sportType', 'organizer')
@@ -27,14 +27,14 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): \Inertia\Response
     {
         return Inertia::render('tournaments/create', [
             'sportTypes' => SportType::all(),
         ]);
     }
 
-    public function store(StoreTournamentRequest $request)
+    public function store(StoreTournamentRequest $request): \Illuminate\Http\RedirectResponse
     {
         $data = $request->validated();
 
@@ -54,7 +54,7 @@ class TournamentController extends Controller
             ->with('success', 'Tournament created. Configure your stages next.');
     }
 
-    public function show(Tournament $tournament)
+    public function show(Tournament $tournament): \Inertia\Response
     {
         $this->authorize('view', $tournament);
 
@@ -104,7 +104,7 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function edit(Tournament $tournament)
+    public function edit(Tournament $tournament): \Inertia\Response
     {
         $this->authorize('update', $tournament);
 
@@ -114,7 +114,7 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function update(UpdateTournamentRequest $request, Tournament $tournament)
+    public function update(UpdateTournamentRequest $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
     {
         $data = $request->validated();
 
@@ -134,7 +134,7 @@ class TournamentController extends Controller
             ->with('success', 'Tournament updated.');
     }
 
-    public function destroy(Tournament $tournament)
+    public function destroy(Tournament $tournament): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('delete', $tournament);
 
@@ -145,7 +145,7 @@ class TournamentController extends Controller
             ->with('success', 'Tournament deleted.');
     }
 
-    public function myTournaments()
+    public function myTournaments(): \Inertia\Response
     {
         $tournaments = Tournament::where('organizer_id', auth()->id())
             ->with('sportType', 'organizer')
@@ -158,7 +158,7 @@ class TournamentController extends Controller
         ]);
     }
 
-   public function manage(Tournament $tournament)
+   public function manage(Tournament $tournament): \Inertia\Response
     {
         $this->authorize('update', $tournament);
 
@@ -191,7 +191,7 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function updateStatus(Request $request, Tournament $tournament)
+    public function updateStatus(Request $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('update', $tournament);
 

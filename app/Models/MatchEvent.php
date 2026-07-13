@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MatchEvent extends Model
 {
@@ -10,17 +11,20 @@ class MatchEvent extends Model
         'match_id', 'participant_id', 'user_id', 'event_type', 'minute', 'remarks',
     ];
 
-    public function match()
+    /** @return BelongsTo<GameMatch, $this> */
+    public function match(): BelongsTo
     {
-        return $this->belongsTo(GameMatch::class, 'match_id');
+        return $this->belongsTo(GameMatch::class);
     }
 
-    public function participant()
+    /** @return BelongsTo<Participant, $this> */
+    public function participant(): BelongsTo
     {
         return $this->belongsTo(Participant::class);
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

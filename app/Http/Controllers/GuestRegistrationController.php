@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class GuestRegistrationController extends Controller
 {
-    public function store(StoreGuestRegistrationRequest $request, Tournament $tournament)
+    public function store(StoreGuestRegistrationRequest $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
     {
         if ($tournament->hasReachedParticipantLimit()) {
             return back()->with('error', 'This tournament has already reached its maximum approved participants.');
@@ -18,7 +18,7 @@ class GuestRegistrationController extends Controller
 
         DB::transaction(function () use ($request, $tournament) {
             $participant = Participant::create([
-                'participant_type' => 'guest',
+                'participant_type' => 'individual', // a lone guest is shaped like an individual
                 'guest_name' => $request->guest_name,
                 'guest_contact' => $request->guest_contact,
             ]);

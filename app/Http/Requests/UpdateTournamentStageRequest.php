@@ -8,12 +8,16 @@ class UpdateTournamentStageRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        /** @var \App\Models\Tournament $tournament */
         $tournament = $this->route('tournament');
 
         return $this->user()->can('update', $tournament)
             && $tournament->status === 'draft';
     }
 
+    /**
+     * @return array<string, array<int, string>|string>
+     */
     public function rules(): array
     {
         return [

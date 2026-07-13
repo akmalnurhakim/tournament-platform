@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Registration extends Model
 {
@@ -17,17 +18,20 @@ class Registration extends Model
         'withdrawn_at' => 'datetime',
     ];
 
-    public function tournament()
+    /** @return BelongsTo<Tournament, $this> */
+    public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
     }
 
-    public function participant()
+    /** @return BelongsTo<Participant, $this> */
+    public function participant(): BelongsTo
     {
         return $this->belongsTo(Participant::class);
     }
 
-    public function approver()
+    /** @return BelongsTo<User, $this> */
+    public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }

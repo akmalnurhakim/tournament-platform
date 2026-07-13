@@ -11,9 +11,15 @@ class StoreRegistrationRequest extends FormRequest
         return $this->user()->can('register', $this->route('tournament'));
     }
 
+    /**
+     * @return array<string, array<int, string>|string>
+     */
     public function rules(): array
     {
-        $sportIsTeamBased = $this->route('tournament')->sportType->is_team_based;
+        /** @var \App\Models\Tournament $tournament */
+        $tournament = $this->route('tournament');
+
+        $sportIsTeamBased = $tournament->sportType->is_team_based;
 
         return [
             'team_id' => [

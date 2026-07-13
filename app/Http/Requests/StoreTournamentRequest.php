@@ -15,6 +15,10 @@ class StoreTournamentRequest extends FormRequest
         \Log::info('Store tournament authorize check', ['user' => $this->user()?->id]);
         return true; //authenticated users can create tournament, ownershhp handled in controller
     }
+    
+    /**
+     * @return array<string, array<int, string>|string>
+     */
     public function rules(): array
     {
         return [

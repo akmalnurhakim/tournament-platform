@@ -176,7 +176,7 @@ class TeamController extends Controller
             ]);
         }
 
-        if ($team->captain_id === $user->id) {
+        if ($team->isCaptain($user)) {
             throw ValidationException::withMessages([
                 'invite_code' => 'You are the captain of this team.',
             ]);
@@ -191,7 +191,11 @@ class TeamController extends Controller
             ]);
         }
 
-        $team->members()->attach($user->id, ['joined_at' => now()]);
+        $team->members()->create([
+            'user_id' => $user->id,
+            'role' => 'member',
+            'joined_at' => now(),
+        ]);
 
         return $team;
     }

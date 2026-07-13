@@ -11,6 +11,9 @@ class StoreGuestRegistrationRequest extends FormRequest
         return $this->user()->can('addGuest', $this->route('tournament'));
     }
 
+    /**
+     * @return array<string, array<int, string>|string>
+     */
     public function rules(): array
     {
         return [

@@ -3,9 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\TournamentController;
-use App\Http\Controllers\MatchController;
 use App\Http\Controllers\TeamController;
-use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\SportTypeController;
 
@@ -39,9 +37,6 @@ Route::apiResource('sport-types', SportTypeController::class)
 
 Route::middleware('auth')->group(function () {
 
-    //matches
-    Route::apiResource('matches', MatchController::class);
-
     //teams
     Route::apiResource('teams', TeamController::class)
     ->except(['store'])
@@ -54,9 +49,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/teams', [TeamController::class, 'storeJson']);
 
     Route::post('/teams/{team}/join', [TeamController::class, 'join']);
-
-    //players
-    Route::apiResource('players', PlayerController::class);
 
     //registrations
     Route::apiResource('registrations', RegistrationController::class);

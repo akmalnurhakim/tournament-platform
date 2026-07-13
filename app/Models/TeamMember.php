@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TeamMember extends Model
 {
+    /** @return BelongsTo<Team, $this> */
     protected $fillable = [
         'team_id', 'user_id', 'role', 'position', 'joined_at',
     ];
@@ -14,12 +16,14 @@ class TeamMember extends Model
         'joined_at' => 'datetime',
     ];
 
-    public function team()
+    /** @return BelongsTo<Team, $this> */
+    public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

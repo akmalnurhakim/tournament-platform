@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SportType extends Model
 {
@@ -14,12 +15,14 @@ class SportType extends Model
         'is_team_based' => 'boolean',
     ];
 
-    public function teams()
+    /** @return HasMany<Team, $this> */
+    public function teams(): HasMany
     {
         return $this->hasMany(Team::class);
     }
 
-    public function tournaments()
+    /** @return HasMany<Tournament, $this> */
+    public function tournaments(): HasMany
     {
         return $this->hasMany(Tournament::class);
     }

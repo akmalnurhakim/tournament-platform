@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class RegistrationController extends Controller
 {
-    public function store(StoreRegistrationRequest $request, Tournament $tournament)
+   public function store(StoreRegistrationRequest $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
     {
         $data = $request->validated();
 
@@ -34,7 +34,7 @@ class RegistrationController extends Controller
         return back()->with('success', 'Registration submitted. Waiting for organizer approval.');
     }
 
-    public function accept(Registration $registration)
+    public function accept(Registration $registration): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('review', $registration);
 
@@ -53,7 +53,7 @@ class RegistrationController extends Controller
         return back()->with('success', 'Registration approved.');
     }
 
-    public function reject(Registration $registration)
+    public function reject(Registration $registration): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('review', $registration);
 
@@ -62,7 +62,7 @@ class RegistrationController extends Controller
         return back()->with('success', 'Registration rejected.');
     }
 
-    public function manage(Tournament $tournament)
+    public function manage(Tournament $tournament): \Inertia\Response
     {
         $this->authorize('update', $tournament);
 

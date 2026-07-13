@@ -26,7 +26,7 @@ class TournamentPolicy
         }
 
         return $user->id === $tournament->organizer_id
-        || $tournament->committee()->where('user_id', $user->id)->exists();
+            || $tournament->committees()->where('user_id', $user->id)->exists();
     }
 
     /**
@@ -79,7 +79,9 @@ class TournamentPolicy
         $alreadyRegistered = $tournament->registrations()
             ->whereHas('participant', function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                    ->orWhereHas('team.members', fn ($m) => $m->where('user_id', $user->id));
+                    ->orWhereHas('team.members', function (\Illuminate\Database\Eloquent\Builder $m) use ($user) {
+                        $m->where('user_id', $user->id);
+                    });
             })
             ->exists();
 

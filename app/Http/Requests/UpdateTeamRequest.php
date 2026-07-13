@@ -15,6 +15,9 @@ class UpdateTeamRequest extends FormRequest
             && $this->user()?->can('update', $team);
     }
 
+    /**
+     * @return array<string, array<int, string>|string>
+     */
     public function rules(): array
     {
         return [

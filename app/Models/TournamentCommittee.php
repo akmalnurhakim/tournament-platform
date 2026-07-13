@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TournamentCommittee extends Model
 {
@@ -14,17 +15,20 @@ class TournamentCommittee extends Model
         'joined_at' => 'datetime',
     ];
 
-    public function tournament()
+    /** @return BelongsTo<Tournament, $this> */
+    public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function inviter()
+    /** @return BelongsTo<User, $this> */
+    public function inviter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'invited_by');
     }

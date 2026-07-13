@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Participant extends Model
 {
@@ -13,36 +15,40 @@ class Participant extends Model
     protected static function booted(): void
     {
         static::saving(function (Participant $participant) {
-            $filled = collect([
+            $filled = count(array_filter([
                 $participant->user_id,
                 $participant->team_id,
                 $participant->guest_name,
-            ])->filter(fn ($v) => filled($v))->count();
+            ], fn ($v) => filled($v)));
 
             if ($filled !== 1) {
                 throw new \InvalidArgumentException(
                     'A participant must have exactly one of user_id, team_id, or guest_name set.'
                 );
             }
-        });
+        }); 
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function team()
+    /** @return BelongsTo<Team, $this> */
+    public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
     }
 
-    public function registrations()
+    /** @return HasMany<Registration, $this> */
+    public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
     }
 
-    public function groupEntries()
+    /** @return HasMany<GroupEntry, $this> */
+    public function groupEntries(): HasMany
     {
         return $this->hasMany(GroupEntry::class);
     }

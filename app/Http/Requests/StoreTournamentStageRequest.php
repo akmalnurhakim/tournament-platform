@@ -6,14 +6,19 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTournamentStageRequest extends FormRequest
 {
+    // StoreTournamentStageRequest.php
     public function authorize(): bool
     {
+        /** @var \App\Models\Tournament $tournament */
         $tournament = $this->route('tournament');
 
         return $this->user()->can('update', $tournament)
-            && !$tournament->hasGeneratedMatches();
+            && ! $tournament->hasGeneratedMatches();
     }
 
+    /**
+     * @return array<string, array<int, string>|string>
+     */
     public function rules(): array
     {
         return [

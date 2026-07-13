@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TournamentStage extends Model
 {
@@ -11,17 +13,20 @@ class TournamentStage extends Model
         'group_count', 'advance_count', 'points_win', 'points_draw', 'points_loss',
     ];
 
-    public function tournament()
+    /** @return BelongsTo<Tournament, $this> */
+    public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
     }
 
-    public function groupEntries()
+    /** @return HasMany<GroupEntry, $this> */
+    public function groupEntries(): HasMany
     {
         return $this->hasMany(GroupEntry::class, 'stage_id');
     }
 
-    public function matches()
+    /** @return HasMany<GameMatch, $this> */
+    public function matches(): HasMany  
     {
         return $this->hasMany(GameMatch::class, 'stage_id');
     }

@@ -3,17 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\SportType;
-use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Collection;
 
 class SportTypeController extends Controller
 {
-    public function index()
+    /**
+     * @return Collection<int, SportType>
+     */
+    public function index(): Collection
     {
         return SportType::all();
     }
 
-
-    public function show($id)
+    public function show(int $id): SportType
     {
         return SportType::findOrFail($id);
     }

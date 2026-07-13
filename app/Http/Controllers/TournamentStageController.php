@@ -9,7 +9,7 @@ use App\Models\TournamentStage;
 
 class TournamentStageController extends Controller
 {
-    public function store(StoreTournamentStageRequest $request, Tournament $tournament)
+    public function store(StoreTournamentStageRequest $request, Tournament $tournament): \Illuminate\Http\RedirectResponse
     {
         $tournament->stages()->create($request->validated());
 
@@ -18,7 +18,7 @@ class TournamentStageController extends Controller
             ->with('success', 'Stage added.');
     }
 
-    public function update(UpdateTournamentStageRequest $request, Tournament $tournament, TournamentStage $stage)
+    public function update(UpdateTournamentStageRequest $request, Tournament $tournament, TournamentStage $stage): \Illuminate\Http\RedirectResponse
     {
         $stage->update($request->validated());
 
@@ -27,7 +27,7 @@ class TournamentStageController extends Controller
             ->with('success', 'Stage updated.');
     }
 
-    public function destroy(Tournament $tournament, TournamentStage $stage)
+    public function destroy(Tournament $tournament, TournamentStage $stage): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('delete', $stage);
 

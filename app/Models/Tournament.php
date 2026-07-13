@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tournament extends Model
 {
@@ -24,31 +26,37 @@ class Tournament extends Model
         'end_date' => 'date',
     ];
 
-    public function organizer()
+    /** @return BelongsTo<User, $this> */
+    public function organizer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'organizer_id');
+        return $this->belongsTo(User::class, 'organizer_id'); // adjust FK if different
     }
 
-    public function sportType()
+    /** @return BelongsTo<SportType, $this> */
+    public function sportType(): BelongsTo
     {
         return $this->belongsTo(SportType::class);
-    }
+}
 
-    public function committees()
+    /** @return HasMany<TournamentCommittee, $this> */
+    public function committees(): HasMany
     {
         return $this->hasMany(TournamentCommittee::class);
     }
 
-    public function stages()
+    /** @return HasMany<TournamentStage, $this> */
+    public function stages(): HasMany
     {
         return $this->hasMany(TournamentStage::class);
     }
 
-    public function registrations()
+    /** @return HasMany<Registration, $this> */
+    public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
     }
 
+/** @return Attribute<string, never> */
     protected function bannerUrl(): Attribute
     {
         return Attribute::make(

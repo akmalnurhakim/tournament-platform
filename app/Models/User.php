@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -48,17 +49,20 @@ class User extends Authenticatable implements PasskeyUser
         ];
     }
 
-    public function organizedTournaments()
+    /** @return HasMany<Tournament, $this> */
+    public function organizedTournaments(): HasMany
     {
-        return $this->hasMany(Tournament::class, 'organizer_id');
+        return $this->hasMany(Tournament::class, 'organizer_id'); // adjust FK
     }
 
-    public function teamMemberships()
+    /** @return HasMany<TeamMember, $this> */
+    public function teamMemberships(): HasMany
     {
         return $this->hasMany(TeamMember::class);
     }
 
-    public function committees()
+    /** @return HasMany<TournamentCommittee, $this> */
+    public function committees(): HasMany
     {
         return $this->hasMany(TournamentCommittee::class);
     }
