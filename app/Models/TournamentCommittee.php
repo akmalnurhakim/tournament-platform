@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TournamentCommittee extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'tournament_id', 'user_id', 'committee_role', 'status', 'invited_by', 'joined_at',
     ];

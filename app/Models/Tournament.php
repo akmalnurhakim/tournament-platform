@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Storage;
@@ -10,11 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tournament extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'organizer_id', 'sport_type_id', 'name', 'format', 'description',
         'venue', 'location', 'visibility', 'invite_code', 'rules',
         'registration_start', 'registration_end', 'max_participants',
-        'start_date', 'end_date', 'status',
+        'start_date', 'end_date', 'status', 'banner',
     ];
 
     protected $appends = ['banner_url'];

@@ -11,23 +11,24 @@ class TeamSeeder extends Seeder
 {
     public function run(): void
     {
-        $basketball = SportType::where('name', 'Basketball')->first();
-        $volleyball = SportType::where('name', 'Volleyball')->first();
+        $basketball = SportType::where('name', 'Basketball')->firstOrFail();
+        $volleyball = SportType::where('name', 'Volleyball')->firstOrFail();
 
-        Team::create([
-            'sport_type_id' => $basketball->id,
-            'name' => 'Thunder Hawks',
-            'description' => 'Basketball team representing the east district.',
-            'invite_code' => Str::upper(Str::random(8)),
-            'status' => 'active',
-        ]);
+        $teams = [
+            ['name' => 'Thunder Hawks', 'sport_type_id' => $basketball->id, 'description' => 'Basketball team representing the east district.'],
+            ['name' => 'Fire Dragons', 'sport_type_id' => $basketball->id, 'description' => 'Basketball team from the north league.'],
+            ['name' => 'Coastal Spikers', 'sport_type_id' => $volleyball->id, 'description' => 'Volleyball team from the coastal region.'],
+            ['name' => 'Wave Riders', 'sport_type_id' => $volleyball->id, 'description' => 'Volleyball team from the southern beaches.'],
+        ];
 
-        Team::create([
-            'sport_type_id' => $volleyball->id,
-            'name' => 'Coastal Spikers',
-            'description' => 'Volleyball team from the coastal region.',
-            'invite_code' => Str::upper(Str::random(8)),
-            'status' => 'active',
-        ]);
+        foreach ($teams as $team) {
+            Team::create([
+                'sport_type_id' => $team['sport_type_id'],
+                'name' => $team['name'],
+                'description' => $team['description'],
+                'invite_code' => Str::upper(Str::random(8)),
+                'status' => 'active',
+            ]);
+        }
     }
 }

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Registration extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'tournament_id', 'participant_id', 'status', 'remarks',
         'registrated_at', 'approved_at', 'approved_by', 'withdrawn_at',

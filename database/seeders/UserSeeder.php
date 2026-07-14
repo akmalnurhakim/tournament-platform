@@ -10,7 +10,12 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $names = ['Akmal', 'Farah', 'Ismail', 'Nadia', 'Zulkifli'];
+        $names = [
+            'Akmal', 'Farah', 'Ismail', 'Nadia', 'Zulkifli',
+            'Hafiz', 'Aina', 'Rahman', 'Syafiqah', 'Danial',
+            'Aisyah', 'Firdaus', 'Nurul', 'Haziq', 'Sofia',
+            'Amirul', 'Farhana', 'Iqbal', 'Diana', 'Yusuf',
+        ];
 
         foreach ($names as $name) {
             User::create([

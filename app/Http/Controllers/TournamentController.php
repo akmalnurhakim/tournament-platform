@@ -119,12 +119,13 @@ class TournamentController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('banner')) {
-            // delete the old banner file so uploads don't pile up unused in storage
             if ($tournament->banner) {
                 Storage::disk('public')->delete($tournament->banner);
             }
 
             $data['banner'] = $request->file('banner')->store('banners', 'public');
+        } else {
+            unset($data['banner']);
         }
 
         $tournament->update($data);

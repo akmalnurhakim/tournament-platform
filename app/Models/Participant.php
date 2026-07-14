@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Participant extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'participant_type', 'user_id', 'team_id', 'guest_name', 'guest_contact',
     ];

@@ -10,46 +10,22 @@ class TeamMemberSeeder extends Seeder
 {
     public function run(): void
     {
-        $thunderHawks = Team::where('name', 'Thunder Hawks')->firstOrFail();
-        $coastalSpikers = Team::where('name', 'Coastal Spikers')->firstOrFail();
+        $teams = Team::orderBy('id')->get();
+        $users = User::orderBy('id')->get();
 
-        $users = User::all()->keyBy('email');
+        $positions = ['Point Guard', 'Shooting Guard', 'Center', 'Forward', 'Small Forward'];
 
-        // Thunder Hawks (Basketball) — 3 members
-        $thunderHawks->members()->create([
-            'user_id' => $users['akmal@test.com']->id,
-            'role' => 'captain',
-            'position' => 'Point Guard',
-            'joined_at' => now(),
-        ]);
+        foreach ($teams as $teamIndex => $team) {
+            $teamUsers = $users->slice($teamIndex * 5, 5)->values();
 
-        $thunderHawks->members()->create([
-            'user_id' => $users['farah@test.com']->id,
-            'role' => 'player',
-            'position' => 'Shooting Guard',
-            'joined_at' => now(),
-        ]);
-
-        $thunderHawks->members()->create([
-            'user_id' => $users['ismail@test.com']->id,
-            'role' => 'player',
-            'position' => 'Center',
-            'joined_at' => now(),
-        ]);
-
-        // Coastal Spikers (Volleyball) — 2 members
-        $coastalSpikers->members()->create([
-            'user_id' => $users['nadia@test.com']->id,
-            'role' => 'captain',
-            'position' => 'Setter',
-            'joined_at' => now(),
-        ]);
-
-        $coastalSpikers->members()->create([
-            'user_id' => $users['zulkifli@test.com']->id,
-            'role' => 'player',
-            'position' => 'Outside Hitter',
-            'joined_at' => now(),
-        ]);
+            foreach ($teamUsers as $memberIndex => $user) {
+                $team->members()->create([
+                    'user_id' => $user->id,
+                    'role' => $memberIndex === 0 ? 'captain' : 'player',
+                    'position' => $positions[$memberIndex],
+                    'joined_at' => now(),
+                ]);
+            }
+        }
     }
 }

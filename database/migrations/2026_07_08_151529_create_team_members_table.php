@@ -22,7 +22,7 @@ return new class extends Migration
                 ->constrained('users')
                 ->cascadeOnDelete();
 
-            $table->string('role')->default('Player');
+            $table->string('role')->default('player');
             $table->string('position')->nullable();
             $table->unsignedTinyInteger('jersey_number')->nullable();
             $table->timestamp('joined_at')->useCurrent();

@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TournamentStage extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'tournament_id', 'stage_type', 'name', 'stage_order',
         'group_count', 'advance_count', 'points_win', 'points_draw', 'points_loss',
